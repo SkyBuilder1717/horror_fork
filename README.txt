@@ -1,5 +1,5 @@
 [======================================================================]
-Original Code and Sounds - Xeno333/TX_Miner (MIT)
+Original Code and Sounds - Xeno333/TX_Miner (MIT; https://content.luanti.org/packages/TX_Miner/horror/)
 [======================================================================]
 Textures, Sounds and modified Code - SkyBuilder1717. (CC-BY SA 4.0)
 [======================================================================]
