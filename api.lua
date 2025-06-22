@@ -212,7 +212,7 @@ local function spook(num)
                         end)
                     elseif num <= 15 then
                         if (light < 7) or (ppos.y < -30) then
-                            core.sound_play({name = modname .. "_cave_sound_" ..  math.random(1, 7), gain = 2.5}, {to_player = name}, true)
+                            core.sound_play({name = modname .. "_cave_sound_" ..  math.random(1, 8), gain = 2.5}, {to_player = name}, true)
                         end
                     elseif num <= 20 and (ppos.y >= 0) then
                         if math.random(1, 2) == 2 then
@@ -249,7 +249,7 @@ local function spook(num)
             if num <= 30 then
                 if num <= 10 then
                     if (light < 7) or (ppos.y < -30) then
-                        core.sound_play({name = modname .. "_cave_sound_" ..  math.random(1, 7), gain = 2.5}, {to_player = name}, true)
+                        core.sound_play({name = modname .. "_cave_sound_" ..  math.random(1, 8), gain = 2.5}, {to_player = name}, true)
                     end
                 elseif num <= 15 and (ppos.y >= 0) then
                     core.sound_play(modname .. "_breath_" ..  math.random(1, 3), params, true)
