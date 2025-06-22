@@ -1,5 +1,204 @@
 local modname = core.get_current_modname()
 
+local idle = {x = 0, y = 2, name = "idle"}
+local scream = {x = 2.25, y = 2.29, name = "scream"}
+local punch = {x = 2.5, y = 3.13, name = "punch"}
+local walk = {x = 3.17, y = 4.17, name = "walk"}
+local eat = {x = 4.33, y = 7.38, name = "eat"}
+core.register_entity(modname .. ":dead_sam", {
+    initial_properties = {
+        visual = "mesh",
+        mesh = modname .. "_dead_sam.gltf",
+        textures = {modname .. "_dead_sam.png"},
+        use_texture_alpha = true,
+        physical = true,
+        collide_with_objects = true,
+        collisionbox = {
+            -0.5, 0, -0.5,
+            0.5, 4, 0.5
+        },
+        stepheight = 2,
+        is_visible = true,
+        makes_footstep_sound = true,
+        damage_texture_modifier = "",
+        groups = {fleshy = 0}
+    },
+    on_activate = function(self, staticdata, dtime_s)
+        local pos = self.object:get_pos()
+        local near_objects = core.get_objects_inside_radius(pos, 64)
+        local player = nil
+        for _, obj in pairs(near_objects) do
+            if obj:is_valid() and obj:is_player() then
+                player = obj
+                break
+            end
+        end
+        if player == nil then
+            self.object:remove()
+            return
+        end
+        self.player = player:get_player_name()
+        self.object:set_animation(idle, 1, 0, true)
+        core.after(math.random(30, 60), function()
+            if self.object:is_valid() then
+                self.object:remove()
+            end
+        end)
+    end,
+    on_step = function(self, dtime, moveresult)
+        local player = core.get_player_by_name(self.player)
+        if not player then
+            self.object:remove()
+            return
+        end
+        local player_pos = player:get_pos() + player:get_look_dir()
+        local pos = self.object:get_pos()
+        local vel = player_pos - pos
+
+        local target_pos = player:get_pos()
+        local self_pos = self.object:get_pos()
+        local dir = {x = target_pos.x - self_pos.x, y = target_pos.y - self_pos.y, z = target_pos.z - self_pos.z}
+        local length = math.sqrt(dir.x^2 + dir.y^2 + dir.z^2)
+        if length > 0 then
+            dir.x = dir.x / length
+            dir.y = dir.y / length
+            dir.z = dir.z / length
+        end
+        local yaw = math.atan2(dir.z, dir.x)
+        local pitch = math.asin(-dir.y)
+        self.object:set_yaw(yaw - 1.575)
+        
+        local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
+        if not (self.animation_name == punch.name) then
+            if not self.attacking then
+                if dist < 8 then
+                    self.attacking = true
+                    return
+                end
+                if dist > 16 then
+                    if self.object:is_valid() then
+                        if ((not (self.animation_name == walk.name)) or (not self.animation_name)) and (player:is_valid() and (player:get_hp() > 0))then
+                            self.object:set_animation(walk, 1, 0, true)
+                            self.animation_name = walk.name
+                        end
+                        self.object:set_velocity(vector.new((vel.x / 4), -9, (vel.z / 4)))
+                    end
+                else
+                    if self.object:is_valid() then
+                        if (not (self.animation_name == idle.name)) or (not self.animation_name) then
+                            if math.random(1,2) == 2 then
+                                self.object:set_animation(idle, 1, 0, true)
+                                self.animation_name = idle.name
+                            else
+                                self.object:set_animation(scream, 1, 0, false)
+                                self.animation_name = scream.name
+                            end
+                        end
+                        self.object:set_velocity(vector.new(0, -9, 0))
+                    end
+                end
+            elseif not self.attackedless then
+                if not self.attacked then
+                    if dist < 2 then
+                        self.attacked = true
+                        return
+                    end
+                    if self.object:is_valid() then
+                        if ((not (self.animation_name == walk.name)) or (not self.animation_name)) and (player:is_valid() and (player:get_hp() > 0)) then
+                            self.object:set_animation(walk, 1, 0, true)
+                            self.animation_name = walk.name
+                        end
+                        self.object:set_velocity(vector.new(vel.x, -9, vel.z))
+                    end
+                else
+                    if self.object:is_valid() and (player:is_valid() and (player:get_hp() > 0)) and (dist < 2) then
+                        self.object:set_animation(eat, 1, 0, false)
+                        self.object:set_velocity(vector.new(0, -9, 0))
+                        player:set_velocity(vector.new(0, 0, 0))
+                        self.animation_name = eat.name
+                        self.attackedless = true
+                        player:set_physics_override({
+                            speed = 0,
+                            speed_walk = 0,
+                            speed_climb = 0,
+                            speed_crouch = 0,
+                            speed_fast = 0,
+                            jump = 0,
+                            gravity = 0,
+                            liquid_fluidity = 0,
+                            liquid_fluidity_smooth = 0,
+                            liquid_sink = 0,
+                            acceleration_default = 0,
+                            acceleration_air = 0,
+                            acceleration_fast = 0,
+                            sneak = false,
+                            sneak_glitch = true,
+                            new_move = false,
+                        })
+                        local ppos = table.copy(pos)
+                        ppos.y = ppos.y + 2.5
+                        vector.add(ppos, self.object:get_rotation())
+                        player:move_to(ppos)
+                        core.after(3.05, function()
+                            if player:is_valid() then
+                                player:set_physics_override({
+                                    speed = 1,
+                                    speed_walk = 1,
+                                    speed_climb = 1,
+                                    speed_crouch = 1,
+                                    speed_fast = 1,
+                                    jump = 1,
+                                    gravity = 1,
+                                    liquid_fluidity = 1,
+                                    liquid_fluidity_smooth = 1,
+                                    liquid_sink = 1,
+                                    acceleration_default = 1,
+                                    acceleration_air = 1,
+                                    acceleration_fast = 1,
+                                    sneak = true,
+                                    sneak_glitch = false,
+                                    new_move = true,
+                                })
+                            end
+                            if self.object:is_valid() then
+                                if (player:is_valid() and (player:get_hp() > 0)) then
+                                    player:move_to(ppos)
+                                    player:set_hp(0)
+                                end
+                                self.attacking = false
+                                self.attacked = false
+                                self.attackedless = false
+                                self.object:set_velocity(vector.new(0, -9, 0))
+                                self.object:set_animation(idle, 1, 0, true)
+                                self.animation_name = idle.name
+                            end
+                        end)
+                    end
+                end
+            end
+        end
+    end,
+    on_punch = function(self, player)
+        if not self.attacking then
+            player:set_hp(0)
+            if self.object:is_valid() then
+                self.object:set_animation(punch, 1, 0, false)
+            end
+            core.after(0.42, function()
+                if self.object:is_valid() then
+                    self.object:set_animation(idle, 1, 0, true)
+                end
+            end)
+        end
+        return true
+    end,
+    on_deactivate = function(self, removal)
+        if not removal then
+            self.object:remove()
+        end
+    end,
+})
+
 core.register_entity(modname .. ":lightning", {
     initial_properties = {
         visual = "upright_sprite",
@@ -87,11 +286,7 @@ core.register_entity(modname .. ":the_entity", {
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
             if dist > 1 and not self.attacking then
-                local ratio = math.abs(math.max(vel.x, vel.y, vel.z))
-                vel.x = (vel.x / ratio) * 10
-                vel.y = (vel.y / ratio) * 10
-                vel.z = (vel.z / ratio) * 10
-                self.object:set_velocity(vel)
+                self.object:set_velocity(vector.new(vel.x / dist, vel.y / dist, vel.z / dist) * 10)
             else
                 self.attacking = true
                 local player_lighting = player:get_lighting()
@@ -203,12 +398,7 @@ core.register_entity(modname .. ":chaser", {
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
             if dist > 10 then
-                local ratio = math.abs(math.max(vel.x, vel.y, vel.z))
-                vel.x = (vel.x / ratio) * 4
-                vel.y = -9
-                vel.z = (vel.z / ratio) * 4
-
-                self.object:set_velocity(vel)
+                self.object:set_velocity(vector.new((vel.x / dist) * 4, -9, (vel.z / dist) * 4))
             else
                 self.object:set_velocity(vector.new(0, -9, 0))
             end
@@ -286,11 +476,7 @@ core.register_entity(modname .. ":reaper", {
         local vel = player_pos - pos
         local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
         if dist > 16 then
-            local ratio = math.abs(math.max(vel.x, vel.y, vel.z))
-            vel.x = (vel.x / ratio) * 4
-            vel.y = (vel.y / ratio) * 4
-            vel.z = (vel.z / ratio) * 4
-            self.object:set_velocity(vel)
+            self.object:set_velocity(vector.new(vel.x / dist, vel.y / dist, vel.z / dist) * 4)
         else
             self.object:set_velocity(vector.new(0, 0, 0))
         end
@@ -378,11 +564,7 @@ core.register_entity(modname .. ":lord_x", {
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
             if dist > 1 then
-                local ratio = math.abs(math.max(vel.x, vel.y, vel.z))
-                vel.x = (vel.x / ratio) * 10
-                vel.y = (vel.y / ratio) * 10
-                vel.z = (vel.z / ratio) * 10
-                self.object:set_velocity(vel)
+                self.object:set_velocity(vector.new(vel.x / dist, vel.y / dist, vel.z / dist) * 10)
             else
                 if self.object:is_valid() then
                     self.attacking = true
@@ -505,17 +687,9 @@ core.register_entity(modname .. ":shadow", {
             return
         end
         if dist > 31 then
-            local ratio = math.abs(math.max(vel.x, vel.y, vel.z))
-            vel.x = (vel.x / ratio) * speed
-            vel.y = -9
-            vel.z = (vel.z / ratio) * speed
-            self.object:set_velocity(vel)
+            self.object:set_velocity(vector.new((vel.x / dist) * speed, -9, (vel.z / dist) * speed))
         elseif dist < 29 then
-            local ratio = math.abs(math.max(vel.x, vel.y, vel.z))
-            vel.x = -(vel.x / ratio) * speed
-            vel.y = -9
-            vel.z = -(vel.z / ratio) * speed
-            self.object:set_velocity(vel)
+            self.object:set_velocity(vector.new(-((vel.x / dist) ) * speed), -9, -((vel.z / dist) * speed))
         else
             self.object:set_velocity(vector.new(0, -9, 0))
         end
@@ -643,11 +817,7 @@ core.register_entity(modname .. ":girl_angry", {
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
             if dist > 1 then
-                local ratio = math.abs(math.max(vel.x, vel.y, vel.z))
-                vel.x = (vel.x / ratio) * 4
-                vel.y = -9
-                vel.z = (vel.z / ratio) * 4
-                self.object:set_velocity(vel)
+                self.object:set_velocity(vector.new((vel.x / dist) * 4, -9, (vel.z / dist) * 4))
             else
                 if self.object:is_valid() then
                     self.attacking = true

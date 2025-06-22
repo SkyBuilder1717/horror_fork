@@ -180,8 +180,12 @@ local function spook(num)
                                 end)
                             end)
                         elseif random == 2 then
-                            if math.random(1, 2) == 2 then
+                            local random2 = math.random(1, 3)
+                            if random2 == 3 then
                                 core.add_entity(pos, modname .. ":girl")
+                            elseif random2 == 2 then
+                                pos = horror_fork.generate_pos(ppos, 32)
+                                core.add_entity(pos, modname .. ":dead_sam")
                             else
                                 pos = horror_fork.generate_pos(ppos, 32)
                                 core.add_entity(pos, modname .. ":shadow")
