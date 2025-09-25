@@ -69,6 +69,7 @@ core.register_entity(modname .. ":dead_sam", {
         self.object:set_yaw(yaw - 1.575)
         
         local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
+        if not speed or not dist or not vel then return end
         if not (self.animation_name == punch.name) then
             if not self.attacking then
                 if dist < 8 then
@@ -285,6 +286,7 @@ core.register_entity(modname .. ":the_entity", {
             local pos = self.object:get_pos()
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
+            if not speed or not dist or not vel then return end
             if dist > 1 and not self.attacking then
                 self.object:set_velocity(vector.new(vel.x / dist, vel.y / dist, vel.z / dist) * 10)
             else
@@ -397,6 +399,7 @@ core.register_entity(modname .. ":chaser", {
             local pos = self.object:get_pos()
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
+            if not speed or not dist or not vel then return end
             if dist > 10 then
                 self.object:set_velocity(vector.new((vel.x / dist) * 4, -9, (vel.z / dist) * 4))
             else
@@ -475,6 +478,7 @@ core.register_entity(modname .. ":reaper", {
         local pos = self.object:get_pos()
         local vel = player_pos - pos
         local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
+        if not speed or not dist or not vel then return end
         if dist > 16 then
             self.object:set_velocity(vector.new(vel.x / dist, vel.y / dist, vel.z / dist) * 4)
         else
@@ -563,6 +567,7 @@ core.register_entity(modname .. ":lord_x", {
             local pos = self.object:get_pos()
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
+            if not speed or not dist or not vel then return end
             if dist > 1 then
                 self.object:set_velocity(vector.new(vel.x / dist, vel.y / dist, vel.z / dist) * 10)
             else
@@ -686,10 +691,11 @@ core.register_entity(modname .. ":shadow", {
             end
             return
         end
+        if not speed or not dist or not vel then return end
         if dist > 31 then
             self.object:set_velocity(vector.new((vel.x / dist) * speed, -9, (vel.z / dist) * speed))
         elseif dist < 29 then
-            self.object:set_velocity(vector.new(-((vel.x / dist) ) * speed), -9, -((vel.z / dist) * speed))
+            self.object:set_velocity(vector.new(-((vel.x / dist)) * speed, -9, -((vel.z / dist) * speed)))
         else
             self.object:set_velocity(vector.new(0, -9, 0))
         end
@@ -735,8 +741,10 @@ core.register_entity(modname .. ":girl", {
         core.after(1, function()
             core.after(15, function()
                 local ppos = player:get_pos()
-                local girl = core.add_entity(horror_fork.generate_pos(ppos, 16), modname .. ":girl_angry")
-                girl:set_properties({player = self.player})
+                if ppos then
+                    local girl = core.add_entity(horror_fork.generate_pos(ppos, 16), modname .. ":girl_angry")
+                    girl:set_properties({player = self.player})
+                end
             end)
             if self.object:is_valid() then
                 self.object:remove()
@@ -816,6 +824,7 @@ core.register_entity(modname .. ":girl_angry", {
             local pos = self.object:get_pos()
             local vel = player_pos - pos
             local dist = math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z)
+            if not speed or not dist or not vel then return end
             if dist > 1 then
                 self.object:set_velocity(vector.new((vel.x / dist) * 4, -9, (vel.z / dist) * 4))
             else
